@@ -18,9 +18,8 @@ typedef struct {
   int s;
   int f;
   int o;
-  int line_pattern;
-  int* pattern;
-  int memory;
+  int count_pattern;
+  char pattern[1024];
 } options;
 
 void difine_pattern(options* config, char* pattern);
