@@ -1,7 +1,7 @@
 SHELL := /bin/bash
 FLAGS = -Wall -Werror -Wextra -g
 FILE = file1.txt file2.txt
-# PATTERN = patterns.reg
+PATTERN = patterns.reg
 CHECK = 2>&1 valgrind --tool=memcheck --leak-check=yes
 
 all: s21_grep tests
@@ -30,5 +30,5 @@ tests:
 	# $(CHECK) ./s21_grep -e We -e do -e we $(FILE) | grep -E ERROR
 	# $(CHECK) ./s21_grep -f $(PATTERN) $(FILE) | grep -E ERROR
 
-	clean:
-		rm -f s21_grep
+clean:
+	rm -f s21_grep
