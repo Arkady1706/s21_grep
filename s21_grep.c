@@ -7,6 +7,7 @@ int main(int argc, char* argv[]) {
 }
 
 void difine_pattern(options* config, char* pattern) {
+  // int n = strlen(pattern);
   if (config->count_pattern != 0) {
     strcat(config->pattern + config->count_pattern, "|");
     config->count_pattern++;
@@ -20,8 +21,8 @@ void add_reg_from_file(options* config, char* filepath) {
   if (f == NULL) {
     if (!config->s) {
       perror(filepath);
-      exit(1);
     }
+    exit(1);
   }
   char* line = NULL;
   size_t memlen = 0;
@@ -29,11 +30,11 @@ void add_reg_from_file(options* config, char* filepath) {
   while (read != -1) {
     if (line[read - 1] == '\n') {
       line[read - 1] = '\0';
-      difine_pattern(config, line);
-      read = getline(&line, &memlen, f);
     }
-    free(line);
+    difine_pattern(config, line);
+    read = getline(&line, &memlen, f);
   }
+  free(line);
 }
 
 options arguments_parser(int argc, char* argv[]) {
@@ -71,8 +72,16 @@ options arguments_parser(int argc, char* argv[]) {
         break;
       case 'f':
         config.f = 1;
+        add_reg_from_file(&config, optarg);
         break;
     }
+  }
+  if (config.count_pattern == 0) {
+    difine_pattern(&config, argv[optind]);
+    optind++;
+  }
+  if (argc - optind == 1) {
+    config.f = 1;
   }
   return config;
 }
@@ -106,12 +115,61 @@ void print_match(regex_t* structure, char* line) {
       putchar(line[i]);
     }
     putchar('\n');
-    offset == match.rm_eo;
+    offset += match.rm_eo;
   }
+}
+
+void processFile(options config, char* path, regex_t* reg) {
+  FILE* f = fopen(path, "r");
+  if (f == NULL) {
+    if (!config.s) {
+      perror(path);
+    }
+    exit(1);
+  }
+  char* line = NULL;
+  size_t memlen = 0;
+  int read = 0;
+  int line_count = 1;
+  int c = 0;
+  read = getline(&line, &memlen, f);
+  while (read != -1) {
+    int result = regexec(reg, line, 0, NULL, 0);
+    if ((result == 0 && !config.v) || (config.v && result != 0)) {
+      if (!config.c && !config.l) {
+        if (!config.h) {
+          printf("%s:", path);
+        }
+        if (config.n) {
+          printf("%d:", line_count);
+        }
+        if (config.o) {
+          print_match(reg, line);
+        } else {
+          print_line(line, read);
+        }
+      }
+      c++;
+    }
+    read = getline(&line, &memlen, f);
+    line_count++;
+  }
+  free(line);
+  if (config.c && !config.l) {
+    if (!config.h) {
+      printf("%s:", path);
+    }
+    printf("%d\n", c);
+  }
+  if (config.l && c > 0) {
+    printf("%s\n", path);
+  }
+  fclose(f);
 }
 
 void output(options config, int argc, char* argv[]) {
   regex_t structure;
+  // printf("%s", config.pattern);
   int value = regcomp(&structure, config.pattern, REG_EXTENDED | config.i);
   if (value) {
     perror("Error");
@@ -120,18 +178,16 @@ void output(options config, int argc, char* argv[]) {
     processFile(config, argv[i], &structure);
   }
 }
-char* line = NULL;
-size_t memlen = 0;
-int symbol = 0;
-while (optind < argc) {
-  char* path = argv[optind];
-  FILE* f = fopen(path, "r");
-  scan_file(f, &line, &memlen, &symbol);
-  while (symbol != -1) {
-    print_line(line, symbol);
-    scan_file(f, &line, &memlen, &symbol);
-  }
-  optind++;
-}
-free(line);
-}
+
+// while (optind < argc) {
+//   char* path = argv[optind];
+//   FILE* f = fopen(path, "r");
+//   scan_file(f, &line, &memlen, &symbol);
+//   while (symbol != -1) {
+//     print_line(line, symbol);
+//     scan_file(f, &line, &memlen, &symbol);
+//   }
+//   optind++;
+// }
+// free(line);
+// }
