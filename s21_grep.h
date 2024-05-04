@@ -26,7 +26,8 @@ void difine_pattern(options* config, char* pattern);
 void add_reg_from_file(options* config, char* filepath);
 options arguments_parser(int argc, char* argv[]);
 void output(options config, int argc, char* argv[]);
-void print_match(regex_t* structure, char* line);
+void print_match(regex_t* structure, char* line, char* file_path,
+                 options config);
 void print_line(char* line, int count);
 void processFile(options config, char* path, regex_t* reg);
 

@@ -103,19 +103,30 @@ void print_line(char* line, int count) {
   }
 }
 
-void print_match(regex_t* structure, char* line) {
+void print_match(regex_t* structure, char* line, char* file_path,
+                 options config) {
   regmatch_t match;
-  int offset = 0;
+  int flag = 0;
+  //  char* duplicate = strdup(line);
+  //  if (duplicate == NULL) {
+  //        perror("ERROR");
+  //        exit(1);
+  //    }
   while (1) {
-    int result = regexec(structure, line + offset, 1, &match, 0);
+    int result = regexec(structure, line, 1, &match, 0);
+    int end = match.rm_eo;
     if (result != 0) {
       break;
     }
+    if (flag > 0 && !config.h) {
+      printf("%s:", file_path);
+    }
+    flag++;
     for (int i = match.rm_so; i < match.rm_eo; i++) {
       putchar(line[i]);
     }
     putchar('\n');
-    offset += match.rm_eo;
+    line = line + end + 1;
   }
 }
 
@@ -144,7 +155,7 @@ void processFile(options config, char* path, regex_t* reg) {
           printf("%d:", line_count);
         }
         if (config.o) {
-          print_match(reg, line);
+          print_match(reg, line, path, config);
         } else {
           print_line(line, read);
         }
@@ -177,6 +188,7 @@ void output(options config, int argc, char* argv[]) {
   for (int i = optind; i < argc; i++) {
     processFile(config, argv[i], &structure);
   }
+  regfree(&structure);
 }
 
 // while (optind < argc) {
