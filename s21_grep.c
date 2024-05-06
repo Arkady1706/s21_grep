@@ -6,37 +6,6 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
-void difine_pattern(options* config, char* pattern) {
-  // int n = strlen(pattern);
-  if (config->count_pattern != 0) {
-    strcat(config->pattern + config->count_pattern, "|");
-    config->count_pattern++;
-  }
-  config->count_pattern +=
-      sprintf(config->pattern + config->count_pattern, "(%s)", pattern);
-}
-
-void add_reg_from_file(options* config, char* filepath) {
-  FILE* f = fopen(filepath, "r");
-  if (f == NULL) {
-    if (!config->s) {
-      perror(filepath);
-    }
-    exit(1);
-  }
-  char* line = NULL;
-  size_t memlen = 0;
-  int read = getline(&line, &memlen, f);
-  while (read != -1) {
-    if (line[read - 1] == '\n') {
-      line[read - 1] = '\0';
-    }
-    difine_pattern(config, line);
-    read = getline(&line, &memlen, f);
-  }
-  free(line);
-}
-
 options arguments_parser(int argc, char* argv[]) {
   options config = {0};
   int num = 0;
@@ -74,6 +43,12 @@ options arguments_parser(int argc, char* argv[]) {
         config.f = 1;
         add_reg_from_file(&config, optarg);
         break;
+      case '?':
+        perror("ERROR");
+        exit(1);
+        break;
+      default:
+        break;
     }
   }
   if (config.count_pattern == 0) {
@@ -86,13 +61,35 @@ options arguments_parser(int argc, char* argv[]) {
   return config;
 }
 
-// void scan_file(FILE* f, char** line, size_t* mem_len, int* len) {
-//   if (f == NULL) {
-//     perror("ERROR");
-//     exit(1);
-//   }
-//   *len = getline(line, mem_len, f);
-// }
+void difine_pattern(options* config, char* pattern) {
+  if (config->count_pattern != 0) {
+    strcat(config->pattern + config->count_pattern, "|");
+    config->count_pattern++;
+  }
+  config->count_pattern +=
+      sprintf(config->pattern + config->count_pattern, "(%s)", pattern);
+}
+
+void add_reg_from_file(options* config, char* filepath) {
+  FILE* f = fopen(filepath, "r");
+  if (f == NULL) {
+    if (!config->s) {
+      perror(filepath);
+    }
+    exit(1);
+  }
+  char* line = NULL;
+  size_t max = 0;
+  int read = getline(&line, &max, f);
+  while (read != -1) {
+    if (line[read - 1] == '\n') {
+      line[read - 1] = '\0';
+    }
+    difine_pattern(config, line);
+    read = getline(&line, &max, f);
+  }
+  free(line);
+}
 
 void print_line(char* line, int count) {
   for (int i = 0; i < count; i++) {
@@ -104,14 +101,9 @@ void print_line(char* line, int count) {
 }
 
 void print_match(regex_t* structure, char* line, char* file_path,
-                 options config) {
+                 options config, int count) {
   regmatch_t match;
   int flag = 0;
-  //  char* duplicate = strdup(line);
-  //  if (duplicate == NULL) {
-  //        perror("ERROR");
-  //        exit(1);
-  //    }
   while (1) {
     int result = regexec(structure, line, 1, &match, 0);
     int end = match.rm_eo;
@@ -120,6 +112,9 @@ void print_match(regex_t* structure, char* line, char* file_path,
     }
     if (flag > 0 && !config.h) {
       printf("%s:", file_path);
+    }
+    if (flag > 0 && config.n) {
+      printf("%d:", count);
     }
     flag++;
     for (int i = match.rm_so; i < match.rm_eo; i++) {
@@ -136,14 +131,15 @@ void processFile(options config, char* path, regex_t* reg) {
     if (!config.s) {
       perror(path);
     }
+    perror("Error opening file");
     exit(1);
   }
   char* line = NULL;
-  size_t memlen = 0;
+  size_t max = 0;
   int read = 0;
   int line_count = 1;
   int c = 0;
-  read = getline(&line, &memlen, f);
+  read = getline(&line, &max, f);
   while (read != -1) {
     int result = regexec(reg, line, 0, NULL, 0);
     if ((result == 0 && !config.v) || (config.v && result != 0)) {
@@ -155,14 +151,14 @@ void processFile(options config, char* path, regex_t* reg) {
           printf("%d:", line_count);
         }
         if (config.o) {
-          print_match(reg, line, path, config);
+          print_match(reg, line, path, config, line_count);
         } else {
           print_line(line, read);
         }
       }
       c++;
     }
-    read = getline(&line, &memlen, f);
+    read = getline(&line, &max, f);
     line_count++;
   }
   free(line);
@@ -190,16 +186,3 @@ void output(options config, int argc, char* argv[]) {
   }
   regfree(&structure);
 }
-
-// while (optind < argc) {
-//   char* path = argv[optind];
-//   FILE* f = fopen(path, "r");
-//   scan_file(f, &line, &memlen, &symbol);
-//   while (symbol != -1) {
-//     print_line(line, symbol);
-//     scan_file(f, &line, &memlen, &symbol);
-//   }
-//   optind++;
-// }
-// free(line);
-// }

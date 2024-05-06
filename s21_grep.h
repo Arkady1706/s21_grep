@@ -1,5 +1,6 @@
 #ifndef S21_GREP
 #define S21_GREP
+#define _GNU_SOURCE
 
 #include <getopt.h>
 #include <regex.h>
@@ -27,7 +28,7 @@ void add_reg_from_file(options* config, char* filepath);
 options arguments_parser(int argc, char* argv[]);
 void output(options config, int argc, char* argv[]);
 void print_match(regex_t* structure, char* line, char* file_path,
-                 options config);
+                 options config, int count);
 void print_line(char* line, int count);
 void processFile(options config, char* path, regex_t* reg);
 

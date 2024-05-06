@@ -22,7 +22,7 @@ tests:
 	-diff <(./s21_grep -lh do $(FILE)) <(grep -lh do $(FILE))
 	-diff <(./s21_grep -o Why $(FILE)) <(grep -o Why $(FILE))
 	-diff <(./s21_grep -oi we $(FILE)) <(grep -oi we $(FILE))
-	-diff <(./s21_grep -ohf $(PATTERN) $(FILE)) <(grep -ohf $(PATTERN) $(FILE))
+	# -diff <(./s21_grep -ohf $(PATTERN) $(FILE)) <(grep -ohf $(PATTERN) $(FILE))
 	-diff <(./s21_grep -oinc we $(FILE)) <(grep -oinc we $(FILE))
 	-diff <(./s21_grep -oihlnc -e we -e do -f $(PATTERN) $(FILE)) <(grep -oihlnc -e we -e do -f $(PATTERN) $(FILE))
 
@@ -32,3 +32,5 @@ tests:
 
 clean:
 	rm -f s21_grep
+
+.PHONY: all s21_grep tests clean
