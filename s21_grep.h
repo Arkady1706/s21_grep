@@ -20,7 +20,7 @@ typedef struct {
   int f;
   int o;
   int count_pattern;
-  char pattern[1024];
+  char pattern[5000];
 } options;
 
 void difine_pattern(options* config, char* pattern);

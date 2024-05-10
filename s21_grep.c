@@ -104,8 +104,9 @@ void print_match(regex_t* structure, char* line, char* file_path,
                  options config, int count) {
   regmatch_t match;
   int flag = 0;
+  int shift = 0;
   while (1) {
-    int result = regexec(structure, line, 1, &match, 0);
+    int result = regexec(structure, line + shift, 1, &match, 0);
     int end = match.rm_eo;
     if (result != 0) {
       break;
@@ -118,27 +119,24 @@ void print_match(regex_t* structure, char* line, char* file_path,
     }
     flag++;
     for (int i = match.rm_so; i < match.rm_eo; i++) {
-      putchar(line[i]);
+      putchar(line[shift + i]);
     }
     putchar('\n');
-    line = line + end + 1;
+    shift += end;
   }
 }
 
 void processFile(options config, char* path, regex_t* reg) {
   FILE* f = fopen(path, "r");
   if (f == NULL) {
-    if (!config.s) {
-      perror(path);
-    }
-    perror("Error opening file");
-    exit(1);
+    if (!config.s) perror(path);
+    return;
   }
   char* line = NULL;
   size_t max = 0;
   int read = 0;
   int line_count = 1;
-  int c = 0;
+  int n_line = 0;
   read = getline(&line, &max, f);
   while (read != -1) {
     int result = regexec(reg, line, 0, NULL, 0);
@@ -156,27 +154,25 @@ void processFile(options config, char* path, regex_t* reg) {
           print_line(line, read);
         }
       }
-      c++;
+      n_line++;
     }
     read = getline(&line, &max, f);
     line_count++;
   }
   free(line);
-  if (config.c && !config.l) {
-    if (!config.h) {
-      printf("%s:", path);
-    }
-    printf("%d\n", c);
+  if (config.c && config.l) {
+    if (!config.h) printf("%s:", path);
   }
-  if (config.l && c > 0) {
-    printf("%s\n", path);
+  if (!config.l && config.c) {
+    if (!config.h) printf("%s:", path);
+    printf("%d\n", n_line);
   }
+  if (config.l && n_line > 0) printf("%s\n", path);
   fclose(f);
 }
 
 void output(options config, int argc, char* argv[]) {
   regex_t structure;
-  // printf("%s", config.pattern);
   int value = regcomp(&structure, config.pattern, REG_EXTENDED | config.i);
   if (value) {
     perror("Error");
